@@ -1,23 +1,29 @@
-import logo from './logo.svg';
+import React, { useState } from "react";
 import './App.css';
+import init, { add } from "wasm-lib";
 
 function App() {
+  const [ans, setAns] = useState(0);
+
+  const [first, setFirst] = useState(0);
+
+  const [second, setSecond] = useState(0);
+
+
+  const handleClick = () => {
+    init().then(() => {
+      setAns(add(first, second));
+    })
+  }
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <div><h1>Enter the first value : </h1><input value={first} onChange={(event) => setFirst(event.target.value)}/></div>
+      <div><h1>Enter the second value : </h1><input value={second} onChange={(event) => setSecond(event.target.value)}/></div>
+      <div><h1>Result</h1></div>
+      <div>{ans}</div>
+      <br></br>
+      <div><button onClick={() => handleClick()}>Submit</button></div>
     </div>
   );
 }

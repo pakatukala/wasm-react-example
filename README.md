@@ -1,70 +1,127 @@
-# Getting Started with Create React App
+# Step by Step implementation of WASM (RUST and REACT)
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+## create the react app 
+    
+    1. npx create-react-app react-wasm-tutorial
+    2. cd react-wasm-tutorial
+    3. npm start
 
-## Available Scripts
+## Create Rust library with cargo.
 
-In the project directory, you can run:
+    1. cargo new wasm-lib --lib
 
-### `npm start`
+## Implement a Rust function that you want to call from JavaScript.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+//Copy and paste the below code into wasm-lib/lib.js
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+// lib.rs
 
-### `npm test`
+fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+#[test]
+fn add_test() {
+    assert_eq!(1 + 1, add(1, 1));
+}
 
-### `npm run build`
+## How to test the RUST code
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+    1. cd wasm-lib
+    2. cargo test
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## To add wasm-bindgen dependency, you need to add it to Cargo.toml.
 
-### `npm run eject`
+    [package]
+    name = "wasm-lib"
+    version = "0.1.0"
+    edition = "2021"
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+    [lib]
+    crate-type = ["cdylib"]
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+    [dependencies]
+    wasm-bindgen = "0.2.78"
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+Then, Let's wrap the function with wasm-bindgen. Notice that only public function can be exported.
 
-## Learn More
+use wasm_bindgen::prelude::*;
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+#[wasm_bindgen]
+pub fn add(a: i32, b: i32) -> i32 {
+    a + b
+}
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+#[test]
+fn add_test() {
+    assert_eq!(1 + 1, add(1, 1));
+}
 
-### Code Splitting
+## If WASM is not installed locally run the below command
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+1. cargo install wasm-pack
 
-### Analyzing the Bundle Size
+2. wasm-pack --version 
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+## Add the below line to package.json
 
-### Making a Progressive Web App
+"build:wasm": "cd wasm-lib && wasm-pack build --target web --out-dir pkg",
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+## Now create a WASM build with the below command
 
-### Advanced Configuration
+npm run build:wasm
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+## Once done with all above steps run the below command 
 
-### Deployment
+1. npm install ./wasm-lib/pkg
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+2. Check the dependencies in package.json you should see "wasm-lib": "file:wasm-lib/pkg", added under dependencies list.
 
-### `npm run build` fails to minify
+## Call the Wasm function from the React app.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+The code which starts with "+" add to your code
+
+import and call
+import React, { useEffect, useState } from 'react';
++import init, { add } from "wasm-lib";
+import logo from './logo.svg';
+import './App.css';
+
+function App() {
++  const [ans, setAns] = useState(0);
++  useEffect(() => {
++    init().then(() => {
++      setAns(add(1, 1));
++    })
++  }, [])
+  return (
+    <div className="App">
+      <header className="App-header">
+        <img src={logo} className="App-logo" alt="logo" />
+        <p>
+          Edit <code>src/App.tsx</code> and save to reload.
+        </p>
++        <p>1 + 1 = {ans}</p>
+        <a
+          className="App-link"
+          href="https://reactjs.org"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          Learn React
+        </a>
+      </header>
+    </div>
+  );
+}
+
+export default App;
+
+You should be seeing the 1 + 1 = 2 on your browser
+
+
+
+
+
